@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Publicador · local</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <span class="logo">◆</span>
+        <div>
+          <h1>Publicador</h1>
+          <p class="tag">generá con IA · abrí cada red con el texto cargado</p>
+        </div>
+      </div>
+      <div class="proj">
+        <label>Proyecto</label>
+        <select id="project"></select>
+        <button id="editProj" class="ghost" title="Editar proyecto">⚙</button>
+      </div>
+    </header>
+
+    <section class="compose">
+      <label class="fld">
+        <span>Tema</span>
+        <input id="topic" placeholder="Ej: cómo prepararse para una auditoría PAMI en residencias geriátricas">
+      </label>
+      <label class="fld">
+        <span>Link del recurso <em>(opcional)</em></span>
+        <input id="url" placeholder="https://www.gentrix.ar/recursos/...">
+      </label>
+
+      <div class="picker">
+        <span class="picker-label">Redes</span>
+        <div id="platforms" class="chips"></div>
+        <button id="addPlatform" class="ghost small">+ agregar red</button>
+      </div>
+
+      <button id="generate" class="primary">✦ Generar posts</button>
+      <div id="status" class="status"></div>
+    </section>
+
+    <section id="results" class="results"></section>
+  </div>
+
+  <!-- modal proyecto -->
+  <div id="projModal" class="modal hidden">
+    <div class="modal-card">
+      <h3>Proyecto</h3>
+      <label class="fld"><span>Nombre</span><input id="pName"></label>
+      <label class="fld"><span>Voz de marca</span><textarea id="pVoice" rows="4"></textarea></label>
+      <label class="fld"><span>Link base <em>(opcional)</em></span><input id="pUrl"></label>
+      <div class="row">
+        <label class="fld"><span>Motor IA</span>
+          <select id="pProvider">
+            <option value="claudecode">Claude Code (local, sin key)</option>
+            <option value="ollama">Ollama (local)</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </label>
+        <label class="fld"><span>Modelo <em>(vacío = default)</em></span><input id="pModel" placeholder="sonnet / llama3.1 / gpt-4o-mini..."></label>
+      </div>
+      <div id="mcpFields">
+        <label class="fld"><span>MCP config <em>(opcional, ruta a .mcp.json)</em></span><input id="pMcp" placeholder="./mcp/gentrix.mcp.json"></label>
+        <label class="fld"><span>MCP tools permitidas <em>(opcional)</em></span><input id="pTools" placeholder="mcp__notion__search mcp__notion__fetch"></label>
+      </div>
+      <div class="modal-actions">
+        <button id="delProj" class="danger ghost">Eliminar</button>
+        <span class="spacer"></span>
+        <button id="cancelProj" class="ghost">Cancelar</button>
+        <button id="saveProj" class="primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal agregar red -->
+  <div id="platModal" class="modal hidden">
+    <div class="modal-card">
+      <h3>Agregar red</h3>
+      <label class="fld"><span>Nombre</span><input id="npLabel" placeholder="Mastodon"></label>
+      <label class="fld"><span>Límite de caracteres</span><input id="npLimit" type="number" value="500"></label>
+      <label class="fld"><span>Estilo para la IA</span><input id="npStyle" placeholder="casual, sin hashtags"></label>
+      <label class="fld"><span>URL para abrir <em>(usá {text} y {url})</em></span>
+        <input id="npUrl" placeholder="https://mastodon.social/share?text={text}"></label>
+      <p class="hint">Si la red no permite precargar texto, dejá la URL base: el texto se copia al portapapeles y pegás.</p>
+      <div class="modal-actions">
+        <span class="spacer"></span>
+        <button id="cancelPlat" class="ghost">Cancelar</button>
+        <button id="savePlat" class="primary">Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="app.js"></script>
+</body>
+</html>
