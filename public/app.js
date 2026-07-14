@@ -125,7 +125,18 @@ function renderResults(url){
           ${p.mode==='open'?'Abrir para postear':'Copiar y abrir'}
         </button>
         <button class="copy-btn">Copiar</button>
+        <button class="img-btn">🖼 Imagen</button>
         <span class="mode ${p.mode==='copy'?'copy':''}">${p.mode==='open'?'abre con el texto cargado':'copiá y pegá (la red no precarga)'}</span>
+      </div>
+      <div class="imgbox hidden">
+        <label class="fld"><span>Prompt de la imagen <em>(editalo y regenerá)</em></span>
+          <textarea class="img-prompt" rows="3"></textarea></label>
+        <img class="img-preview hidden" alt="Imagen generada">
+        <div class="img-actions">
+          <button class="img-regen ghost small">Generar</button>
+          <a class="img-dl ghost small hidden" download target="_blank">⬇ Descargar</a>
+          <span class="img-status"></span>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -141,7 +152,57 @@ function renderResults(url){
     };
     card.querySelector('.copy-btn').onclick = ()=>{ copy(ta.value); toast('Texto copiado'); };
     card.querySelector('.open-btn').onclick = ()=> openPlatform(p, ta.value, url);
+
+    // ---- imagen ----
+    const imgbox = card.querySelector('.imgbox');
+    const promptTa = card.querySelector('.img-prompt');
+    card.querySelector('.img-btn').onclick = ()=>{
+      if(imgbox.classList.contains('hidden')){
+        imgbox.classList.remove('hidden');
+        if(!promptTa.value) promptTa.value = imagePrompt(p);
+        generateImage(card, p);
+      }else{
+        imgbox.classList.add('hidden');
+      }
+    };
+    card.querySelector('.img-regen').onclick = ()=> generateImage(card, p);
   });
+}
+
+function imagePrompt(p){
+  const proj = currentProject();
+  const topic = document.getElementById('topic').value.trim();
+  return `Imagen para acompañar un post de ${p.label} de la marca "${proj.name||'la marca'}". `+
+    `Tema del post: ${topic}. `+
+    `Estética profesional, moderna y limpia, coherente con esta voz de marca: ${proj.voice||'profesional y clara'}. `+
+    `Sin texto, sin letras y sin logos dentro de la imagen.`;
+}
+
+async function generateImage(card, p){
+  const status = card.querySelector('.img-status');
+  const img = card.querySelector('.img-preview');
+  const dl = card.querySelector('.img-dl');
+  const btn = card.querySelector('.img-regen');
+  const prompt = card.querySelector('.img-prompt').value.trim();
+  if(!prompt){ status.textContent = 'Escribí un prompt.'; return; }
+  status.textContent = 'Generando imagen…'; btn.disabled = true;
+  try{
+    const res = await fetch('/api/image',{
+      method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ prompt, platformKey: p.key })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Error del servidor');
+    img.src = data.url; img.classList.remove('hidden');
+    dl.href = data.url; dl.setAttribute('download', p.key + '_' + Date.now() + '.png');
+    dl.classList.remove('hidden');
+    btn.textContent = 'Regenerar';
+    status.textContent = '';
+  }catch(e){
+    status.textContent = 'Error: ' + e.message;
+  }finally{
+    btn.disabled = false;
+  }
 }
 
 function openPlatform(p, text, url){

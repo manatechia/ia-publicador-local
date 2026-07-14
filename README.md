@@ -31,12 +31,20 @@ Abrí http://localhost:5173
    - **Abrir para postear**: abre el compositor con el texto cargado (LinkedIn, X, Threads, Bluesky, WhatsApp).
    - **Copiar y abrir**: copia el texto y abre la red (Instagram, Medium, Facebook: no permiten precargar).
 
+## Imágenes
+Cada post generado tiene un botón **🖼 Imagen**: arma un prompt a partir del tema y la voz de marca (editable), genera la imagen (cuadrada para Instagram, apaisada para el resto) y te deja descargarla para subirla al compositor de la red. Proveedores soportados (usa el primero configurado en `.env`, o forzá con `IMAGE_PROVIDER`):
+- **Gemini** (`GEMINI_API_KEY`): free tier generoso, key gratis en aistudio.google.com/apikey. Recomendado para empezar.
+- **OpenAI** (`OPENAI_API_KEY`): `gpt-image-1`.
+- **Stable Diffusion local** (`SD_URL`): AUTOMATIC1111 corriendo con `--api`. 100% local, requiere GPU.
+
 ## Configuración
 - **Proyectos y voz de marca**: `projects.json` (o desde el botón ⚙ en la web).
 - **Claves y modelos**: `.env`.
 - **Redes personalizadas**: se guardan en tu navegador (localStorage).
 
 ## Roadmap
-- **Iter. 1 (esta):** generar + abrir cada red manualmente. ✅
-- **Iter. 2:** un botón "publicar en todas las marcadas".
-- **Iter. 3:** programar ("mañana a las 9") y que suba a las redes elegidas — vía navegador headless con sesión persistente.
+- **Iter. 1 (esta):** generar posts + imagen, y abrir cada red manualmente. ✅
+- **Iter. 2:** publicación automática. Dos caminos según la red:
+  - **Instagram/Facebook**: la web no permite precargar nada, así que la única vía sin automatizar el navegador es la **Meta Graph API** (cuenta Business/Creator vinculada a una página; la imagen debe estar en una URL pública). Funciona en modo desarrollo para cuentas propias sin app review.
+  - **Resto (y alternativa general)**: navegador automatizado (Playwright) con **sesión persistente** — iniciás sesión una vez y el bot sube el post por vos. Cubre Instagram sin cuenta Business.
+- **Iter. 3:** programar ("mañana a las 9") y que publique solo en las redes elegidas.

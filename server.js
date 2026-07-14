@@ -114,6 +114,95 @@ function extractJson(s) {
   return {};
 }
 
+// ---------- imagenes ----------
+const GENERATED_DIR = path.join(__dirname, 'public', 'generated');
+
+app.post('/api/image', async (req, res) => {
+  try {
+    const { prompt, platformKey } = req.body || {};
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Falta el prompt de la imagen.' });
+    }
+    const size = platformKey === 'instagram' ? 'square' : 'landscape';
+    const png = await generateImage(prompt, size);
+    fs.mkdirSync(GENERATED_DIR, { recursive: true });
+    const file = 'img_' + Date.now() + '.png';
+    fs.writeFileSync(path.join(GENERATED_DIR, file), png);
+    res.json({ url: '/generated/' + file });
+  } catch (e) {
+    console.error('[image]', e);
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
+
+function imageProvider() {
+  const p = (process.env.IMAGE_PROVIDER || '').toLowerCase();
+  if (p) return p;
+  if (process.env.GEMINI_API_KEY) return 'gemini';
+  if (process.env.OPENAI_API_KEY) return 'openai';
+  if (process.env.SD_URL) return 'sd';
+  return null;
+}
+
+async function generateImage(prompt, size) {
+  const provider = imageProvider();
+  if (!provider) {
+    throw new Error('No hay proveedor de imágenes configurado. Seteá en .env una de: ' +
+      'GEMINI_API_KEY (gratis en aistudio.google.com), OPENAI_API_KEY, o SD_URL (Stable Diffusion local).');
+  }
+  if (provider === 'gemini') return imageGemini(prompt, size);
+  if (provider === 'openai') return imageOpenAI(prompt, size);
+  if (provider === 'sd') return imageSD(prompt, size);
+  throw new Error('IMAGE_PROVIDER desconocido: ' + provider);
+}
+
+// Gemini (nano banana): free tier generoso, ideal para empezar.
+async function imageGemini(prompt, size) {
+  const key = process.env.GEMINI_API_KEY;
+  const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
+  const hint = size === 'square' ? 'Formato cuadrado 1:1.' : 'Formato apaisado 16:9.';
+  const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt + ' ' + hint }] }] })
+  });
+  if (!r.ok) throw new Error('Gemini ' + r.status + ': ' + (await r.text()).slice(0, 300));
+  const d = await r.json();
+  const part = d.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+  if (!part) throw new Error('Gemini no devolvió imagen: ' + JSON.stringify(d).slice(0, 300));
+  return Buffer.from(part.inlineData.data, 'base64');
+}
+
+async function imageOpenAI(prompt, size) {
+  const key = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
+  const r = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+    body: JSON.stringify({ model, prompt, size: size === 'square' ? '1024x1024' : '1536x1024' })
+  });
+  if (!r.ok) throw new Error('OpenAI imágenes ' + r.status + ': ' + (await r.text()).slice(0, 300));
+  const d = await r.json();
+  const b64 = d.data?.[0]?.b64_json;
+  if (!b64) throw new Error('OpenAI no devolvió imagen.');
+  return Buffer.from(b64, 'base64');
+}
+
+// Stable Diffusion local via AUTOMATIC1111 (100% local, gratis, requiere GPU).
+async function imageSD(prompt, size) {
+  const base = process.env.SD_URL || 'http://localhost:7860';
+  const [width, height] = size === 'square' ? [1024, 1024] : [1216, 832];
+  const r = await fetch(base + '/sdapi/v1/txt2img', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ prompt, width, height, steps: 25 })
+  });
+  if (!r.ok) throw new Error('Stable Diffusion ' + r.status + ': ' + (await r.text()).slice(0, 300));
+  const d = await r.json();
+  if (!d.images?.[0]) throw new Error('Stable Diffusion no devolvió imagen.');
+  return Buffer.from(d.images[0], 'base64');
+}
+
 // ---------- adaptadores LLM ----------
 async function callLLM(provider, project, sys, user) {
   if (provider === 'claudecode') return callClaudeCode(project, sys, user);

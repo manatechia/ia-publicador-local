@@ -1,26 +1,32 @@
 {
-  "current": "Gentrix",
+  "current": "Mana",
   "projects": [
     {
       "name": "Gentrix",
       "voice": "Autoridad técnica en regulación geriátrica PAMI (Argentina). Serio, preciso, orientado a dueños y directores de residencias. Cero clickbait; datos regulatorios claros. Antes de publicar, cualquier dato regulatorio debe verificarse.",
+      "url": "https://www.gentrix.ar/recursos/",
       "provider": "claudecode",
       "model": "",
-      "url": "https://www.gentrix.ar/recursos/"
+      "mcpConfig": "",
+      "allowedTools": ""
     },
     {
       "name": "Mana",
       "voice": "Tono tech, cercano y práctico. Foco en producto y aprendizajes. Directo, con toques de humor medido.",
+      "url": "",
       "provider": "claudecode",
       "model": "",
-      "url": ""
+      "mcpConfig": "",
+      "allowedTools": ""
     },
     {
       "name": "Mavera",
       "voice": "Profesional y aspiracional. Claro y sobrio.",
+      "url": "",
       "provider": "claudecode",
       "model": "",
-      "url": ""
+      "mcpConfig": "",
+      "allowedTools": ""
     }
   ]
 }
